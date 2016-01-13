@@ -1,59 +1,39 @@
-import java.net.URL;
-import java.net.URLClassLoader;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
 public class CustomClassLoader extends ClassLoader
 {
-    private ChildClassLoader childClassLoader;
-    public CustomClassLoader(URL[] classpath)
-    {
-        super(Thread.currentThread().getContextClassLoader());
-        childClassLoader = new ChildClassLoader(classpath, new DetectClass(this.getParent()) );
+    public CustomClassLoader (ClassLoader parent) {
+        super(parent);
     }
+
+    private Class getClass(String name) throws ClassNotFoundException {
+        try {
+            byte[] b = loadClassFileData(name);
+            Class c = defineClass(name, b, 0, b.length);
+            resolveClass(c);
+            return c;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     @Override
-    protected synchronized Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException
-    {
-        try
-        {
-            return childClassLoader.findClass(name);
-        }
-        catch( ClassNotFoundException e )
-        {
-            return super.loadClass(name, resolve);
-        }
+    public Class loadClass(String name) throws ClassNotFoundException {
+        System.out.println("Loading Class '" + name + "'");
+        return getClass(name);
     }
-    private static class ChildClassLoader extends URLClassLoader
-    {
-        private DetectClass realParent;
-        public ChildClassLoader( URL[] urls, DetectClass realParent )
-        {
-            super(urls, null);
-            this.realParent = realParent;
-        }
-        @Override
-        public Class<?> findClass(String name) throws ClassNotFoundException
-        {
-            try
-            {
-                Class<?> loaded = super.findLoadedClass(name);
-                if( loaded != null )
-                    return loaded;
-                return super.findClass(name);
-            }
-            catch( ClassNotFoundException e )
-            {
-                return realParent.loadClass(name);
-            }
-        }
-    }
-    private static class DetectClass extends ClassLoader
-    {
-        public DetectClass(ClassLoader parent)
-        {
-            super(parent);
-        }
-        @Override
-        public Class<?> findClass(String name) throws ClassNotFoundException
-        {
-            return super.findClass(name);
-        }
+
+    private byte[] loadClassFileData(String name) throws IOException {
+        InputStream stream = getClass().getClassLoader().getResourceAsStream(
+                name);
+        int size = stream.available();
+        byte buff[] = new byte[size];
+        DataInputStream in = new DataInputStream(stream);
+        in.readFully(buff);
+        in.close();
+        return buff;
     }
 }
