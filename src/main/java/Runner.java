@@ -1,19 +1,22 @@
-import java.lang.reflect.Method;
+import java.util.Scanner;
+
 public class Runner {
 
     public static void main (String[] args) {
 
-        try {
-
-            CustomClassLoader classloader = new CustomClassLoader(Runner.class.getClassLoader());
-
-            Class semaphore = classloader.loadClass("com.epam.mentoring.lessone.Semaphore.class");
-
-            Method method = semaphore.getMethod("lever");
-            method.invoke(null);
-        }
-        catch (Exception e){
-            System.out.print(e);
+        while (true) {
+            Scanner in = new Scanner(System.in);
+            System.out.println("Please enter class name : ");
+            String className = in.nextLine();
+            try {
+                CustomClassLoader classLoader = new CustomClassLoader();
+                classLoader.invokeClassMethod("com.epam.mentoring.lessone."+className, "lever");
+                return;
+            }
+            catch (Throwable e){
+                System.out.println("Can't find "+className+", try again!");
+            }
         }
     }
+
 }
